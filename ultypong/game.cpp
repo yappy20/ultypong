@@ -6,6 +6,7 @@ using namespace std;
 
 int player_score = 0;
 int cpu_score = 0;
+bool game_over = false;
 
 class Ball {
 public:
@@ -18,6 +19,8 @@ public:
     }
 
     void Update() {
+        if (game_over) return; // Do not update if game is over
+
         x += speed_x;
         y += speed_y;
 
@@ -51,13 +54,13 @@ public:
 
     void CheckGameEnd() {
         if (player_score == 5 || cpu_score == 5) {
+            game_over = true;
             if (player_score == 5) {
                 cout << "Player wins!" << endl;
             }
             else {
                 cout << "CPU wins!" << endl;
             }
-            CloseWindow();
         }
     }
 };
@@ -83,6 +86,8 @@ public:
     }
 
     void Update() {
+        if (game_over) return; // Do not update if game is over
+
         if (IsKeyDown(KEY_UP)) {
             y = y - speed;
         }
@@ -96,6 +101,8 @@ public:
 class CpuPaddle : public Paddle {
 public:
     void Update(int ball_y) {
+        if (game_over) return; // Do not update if game is over
+
         if (y + height / 2 > ball_y) {
             y = y - speed;
         }
@@ -144,14 +151,16 @@ void startGame() {
         cpu.Update(ball.y);
 
         // Checking for collisions
-        if (CheckCollisionCircleRec({ ball.x, ball.y }, ball.radius, { player.x, player.y, player.width, player.height })) {
-            ball.speed_x *= -1;
-            ball.x = player.x - ball.radius; // Move ball away from paddle
-        }
+        if (!game_over) {
+            if (CheckCollisionCircleRec({ ball.x, ball.y }, ball.radius, { player.x, player.y, player.width, player.height })) {
+                ball.speed_x *= -1;
+                ball.x = player.x - ball.radius; // Move ball away from paddle
+            }
 
-        if (CheckCollisionCircleRec({ ball.x, ball.y }, ball.radius, { cpu.x, cpu.y, cpu.width, cpu.height })) {
-            ball.speed_x *= -1;
-            ball.x = cpu.x + cpu.width + ball.radius; // Move ball away from paddle
+            if (CheckCollisionCircleRec({ ball.x, ball.y }, ball.radius, { cpu.x, cpu.y, cpu.width, cpu.height })) {
+                ball.speed_x *= -1;
+                ball.x = cpu.x + cpu.width + ball.radius; // Move ball away from paddle
+            }
         }
 
         // Drawing
@@ -163,7 +172,15 @@ void startGame() {
         DrawText(TextFormat("%i", cpu_score), screen_width / 4 - 20, 20, 80, WHITE);
         DrawText(TextFormat("%i", player_score), 3 * screen_width / 4 - 20, 20, 80, WHITE);
 
+        if (game_over) {
+            
+            DrawText("GAME OVER", screen_width / 2 - MeasureText("GAME OVER", 80) / 2, screen_height / 2 - 40, 80, RED);
+            ClearBackground(BLACK);
+        }
+
         EndDrawing();
+
+         // Exit the game loop if game is over
     }
 
     CloseWindow();
